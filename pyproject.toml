@@ -15,3 +15,8 @@ pms7003 = "pms7003:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipython>=8.30.0",
+]
