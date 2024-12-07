@@ -1,0 +1,17 @@
+[project]
+name = "pms7003"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [{ name = "Boye A. Høverstad", email = "boyeah@gmail.com" }]
+requires-python = ">=3.13"
+dependencies = [
+    "pyserial>=3.5",
+]
+
+[project.scripts]
+pms7003 = "pms7003:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,6 +1,8 @@
-from threading import Thread, Lock
-from .pms7003 import Pms7003Sensor
 import time
+from threading import Lock, Thread
+
+from .pms7003 import Pms7003Sensor
+
 
 class Pms7003Thread(Thread):
     def __init__(self, serial_device):
@@ -26,14 +28,13 @@ class Pms7003Thread(Thread):
 
     def run(self):
         while self._running:
-            
             with self._sensor_lock:
                 measurements = self._sensor.read()
 
             with self._m_lock:
                 self._m = measurements
 
-            time.sleep(.5) # 2Hz (the sensor has 1Hz update)
+            time.sleep(0.5)  # 2Hz (the sensor has 1Hz update)
 
     @property
     def measurements(self):
