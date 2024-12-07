@@ -1,6 +1,8 @@
 """A minimalistic python interface for PMS7003 sensor"""
 
-from collections import OrderedDict
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Self
 
 import serial
 
@@ -15,33 +17,46 @@ class PmsSensorException(Exception):
     pass
 
 
-START_SEQ = bytes([0x42, 0x4D])
-FRAME_BYTES = 30
+@dataclass
+class ParticleConcentration:
+    pm1_0: int
+    pm2_5: int
+    pm10: int
 
-# '.' are replaced with '_' for easier database compability
-BYTES_MEANING = {
-    1: "pm1_0cf1",
-    2: "pm2_5cf1",
-    3: "pm10cf1",
-    4: "pm1_0",
-    5: "pm2_5",
-    6: "pm10",
-    7: "n0_3",
-    8: "n0_5",
-    9: "n1_0",
-    10: "n2_5",
-    11: "n5_0",
-    12: "n10",
-}
 
-VALUES = list(BYTES_MEANING.values())
+@dataclass
+class ParticleCount:
+    n0_3: int
+    n0_5: int
+    n1_0: int
+    n2_5: int
+    n5_0: int
+    n10: int
 
-NO_VALUES = len(BYTES_MEANING) + 1
+
+@dataclass
+class Measurement:
+    timestamp: datetime
+    conc_cf1: ParticleConcentration
+    conc_atm: ParticleConcentration
+    count: ParticleCount
+
+    @classmethod
+    def from_values(cls, timestamp: datetime, values: list[int]) -> Self:
+        return cls(
+            timestamp,
+            ParticleConcentration(*values[:3]),
+            ParticleConcentration(*values[3:6]),
+            ParticleCount(*values[6:]),
+        )
 
 
 class Pms7003Sensor:
+    START_SEQUENCE = bytes([0x42, 0x4D])
+    FRAME_BYTES = 30
+
     def __init__(self, serial_device):
-        # values according to product data manual
+        # Values according to product data manual
         self._serial = serial.Serial(
             port=serial_device,
             baudrate=9600,
@@ -51,29 +66,57 @@ class Pms7003Sensor:
             timeout=2,
         )
 
-    def _get_frame(self):
+    def close(self):
+        self._serial.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def _read_frame(self) -> bytes:
+        """
+        :return: Read a frame and return the bytes read
+        """
+        self._serial.read_until(self.START_SEQUENCE)
+        frame = self._serial.read(self.FRAME_BYTES)
+        if len(frame) != self.FRAME_BYTES:
+            raise PmsSensorException("Failed to read data from serial port")
+        return frame
+
+    def _frame_to_ints(self, frame: bytes, n: int) -> list[int]:
+        """
+        :return: a list of n integer values converted from two-byte values in
+            the frame
+        """
+        return [int.from_bytes(frame[i * 2 : i * 2 + 2], "big") for i in range(n)]
+
+    def _read_measured_values(self) -> list[int]:
         """
         :return: a frame as a list of integer values of bytes
         """
-        with self._serial as s:
-            s.read_until(START_SEQ)
-            frame = list(s.read(FRAME_BYTES))
-            if len(frame) == FRAME_BYTES:
-                return frame
-            else:
-                raise PmsSensorException
+        frame = self._read_frame()
 
-    def _parse_frame(self, f):
-        """
-        iterates every second index and glues the H and L bytes together
-        :return: raw parsed integer values
-        """
-        vls = [f[i] << 8 | f[i + 1] for i in range(0, len(f), 2)]
-        return vls
+        # According to the documentation here are two reserved bytes after the
+        # data and before the checksum, these contain random values, so we just
+        # ignore them.
+        frame_length = self._frame_to_ints(frame, 1)[0]
+        data = self._frame_to_ints(frame[2:], 12)
+        checksum = self._frame_to_ints(frame[-2:], 1)[0]
 
-    def _valid_frame(self, frame, vls):
-        _checksum = vls[-1]
-        return _checksum == sum(frame[:-2]) + sum(START_SEQ)
+        if frame_length != self.FRAME_BYTES - 2:
+            raise PmsSensorException(
+                "Unexpected frame length read from serial. "
+                f"Expected {self.FRAME_BYTES}, got {frame_length}."
+            )
+
+        self._validate_frame(frame, checksum)
+        return data
+
+    def _validate_frame(self, frame, checksum):
+        if checksum != sum(frame[:-2]) + sum(self.START_SEQUENCE):
+            raise PmsSensorException("Checksum error")
 
     def wakeup(self):
         with self._serial as s:
@@ -85,25 +128,10 @@ class Pms7003Sensor:
             command = bytearray([0x42, 0x4D, 0xE4, 0x00, 0x00, 0x01, 0x73])
             s.write(command)
 
-    def read(self, ordered=False):
+    def read_measurement(self) -> Measurement:
         """
-        :return: a dict with measurements or raises Pms7003Exception in case of a problem with connection
+        :return: a Measurement with measurements. Raises Pms7003Exception in case
+            of a problem.
         """
-        frame = self._get_frame()
-        values = self._parse_frame(frame)
-        # frame_len = values[0] (you could read the frame length from here)
-
-        if self._valid_frame(frame, values):
-            if ordered:
-                return OrderedDict(
-                    (BYTES_MEANING[i], values[i]) for i in range(1, NO_VALUES)
-                )
-            else:
-                return {
-                    BYTES_MEANING[i]: values[i] for i in range(1, NO_VALUES)
-                }  # (regular dict)
-        else:
-            raise PmsSensorException
-
-    def close(self):
-        self._serial.close()
+        values = self._read_measured_values()
+        return Measurement.from_values(datetime.now().astimezone(), values)
