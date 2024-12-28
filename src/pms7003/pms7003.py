@@ -62,11 +62,11 @@ class Pms7003Sensor:
         "stopbits": serial.STOPBITS_ONE,
     }
 
-    def __init__(self, serial_device):
+    def __init__(self, port, timeout=2):
         # Values according to product data manual
         self._serial = serial.Serial(
-            port=serial_device,
-            timeout=2,
+            port=port,
+            timeout=timeout,
             **self.SERIAL_CONFIG,
         )
 
@@ -112,7 +112,7 @@ class Pms7003Sensor:
         if frame_length != self.FRAME_BYTES - 2:
             raise PmsSensorException(
                 "Unexpected frame length read from serial. "
-                f"Expected {self.FRAME_BYTES}, got {frame_length}."
+                f"Expected {self.FRAME_BYTES - 2}, got {frame_length}."
             )
 
         self._validate_frame(frame, checksum)
