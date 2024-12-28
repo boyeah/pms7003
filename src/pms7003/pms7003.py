@@ -55,15 +55,19 @@ class Pms7003Sensor:
     START_SEQUENCE = bytes([0x42, 0x4D])
     FRAME_BYTES = 30
 
+    SERIAL_CONFIG = {
+        "baudrate": 9600,
+        "bytesize": serial.EIGHTBITS,
+        "parity": serial.PARITY_NONE,
+        "stopbits": serial.STOPBITS_ONE,
+    }
+
     def __init__(self, serial_device):
         # Values according to product data manual
         self._serial = serial.Serial(
             port=serial_device,
-            baudrate=9600,
-            bytesize=serial.EIGHTBITS,
-            parity=serial.PARITY_NONE,
-            stopbits=serial.STOPBITS_ONE,
             timeout=2,
+            **self.SERIAL_CONFIG,
         )
 
     def close(self):
