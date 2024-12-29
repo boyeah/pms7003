@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Self
 
 import serial
+from loguru import logger
 
 
 class PmsSensorException(Exception):
@@ -53,15 +54,16 @@ class Pms7003Sensor:
     }
 
     def __init__(self, port, timeout=5):
-        # Values according to product data manual
         self._serial = serial.Serial(
             port=port,
             timeout=timeout,
             **self.SERIAL_CONFIG,
         )
+        logger.info("Serial port opened on {}", port)
 
     def close(self):
         self._serial.close()
+        logger.info("Serial port closed")
 
     def __enter__(self):
         return self
@@ -128,4 +130,6 @@ class Pms7003Sensor:
             of a problem.
         """
         values = self._read_measured_values()
-        return Measurement.from_values(datetime.now().astimezone(), values)
+        measurement = Measurement.from_values(datetime.now().astimezone(), values)
+        logger.debug("New measurement received from PMS7003 sensor: {}", measurement)
+        return measurement

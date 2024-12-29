@@ -1,11 +1,13 @@
 from threading import Lock, Thread
 
+from loguru import logger
+
 from .pms7003 import Pms7003Sensor
 
 
 class Pms7003Thread(Thread):
     def __init__(self, port):
-        super(Pms7003Thread, self).__init__()
+        super().__init__()
         self._lock = Lock()
         self._sensor = Pms7003Sensor(port)
         self._measurements = []
@@ -16,14 +18,24 @@ class Pms7003Thread(Thread):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self._running = False
+        self.stop()
+
+    def stop(self):
         with self._lock:
-            self._sensor.close()
+            self._running = False
+        self.join()
+        self._sensor.close()
+        logger.info("PMS7003 sensor thread stopped successfully")
 
     def run(self):
-        while self._running:
+        logger.info("PMS7003 sensor thread started")
+        with self._lock:
+            running = self._running
+        while running:
             with self._lock:
-                self._measurements.append(self._sensor.read_measurement())
+                measurement = self._sensor.read_measurement()
+                self._measurements.append(measurement)
+                running = self._running
 
     def get_measurements(self):
         with self._lock:
