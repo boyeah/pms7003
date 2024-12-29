@@ -52,7 +52,7 @@ class Pms7003Sensor:
         "stopbits": serial.STOPBITS_ONE,
     }
 
-    def __init__(self, port, timeout=2):
+    def __init__(self, port, timeout=5):
         # Values according to product data manual
         self._serial = serial.Serial(
             port=port,
