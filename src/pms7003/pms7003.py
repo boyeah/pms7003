@@ -18,14 +18,17 @@ class PmsSensorException(Exception):
 
 
 @dataclass
-class ParticleConcentration:
-    pm1_0: int
-    pm2_5: int
-    pm10: int
+class Measurement:
+    timestamp: datetime
 
+    pm1_0_cf1: int
+    pm2_5_cf1: int
+    pm10_cf1: int
 
-@dataclass
-class ParticleCount:
+    pm1_0_atm: int
+    pm2_5_atm: int
+    pm10_atm: int
+
     n0_3: int
     n0_5: int
     n1_0: int
@@ -33,22 +36,9 @@ class ParticleCount:
     n5_0: int
     n10: int
 
-
-@dataclass
-class Measurement:
-    timestamp: datetime
-    conc_cf1: ParticleConcentration
-    conc_atm: ParticleConcentration
-    count: ParticleCount
-
     @classmethod
     def from_values(cls, timestamp: datetime, values: list[int]) -> Self:
-        return cls(
-            timestamp,
-            ParticleConcentration(*values[:3]),
-            ParticleConcentration(*values[3:6]),
-            ParticleCount(*values[6:]),
-        )
+        return cls(timestamp, *values)
 
 
 class Pms7003Sensor:
