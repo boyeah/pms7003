@@ -6,10 +6,10 @@ from .pms7003 import Pms7003Sensor
 
 
 class Pms7003Thread(Thread):
-    def __init__(self, port):
+    def __init__(self, *args, **kwargs):
         super().__init__()
         self._lock = Lock()
-        self._sensor = Pms7003Sensor(port)
+        self._sensor = Pms7003Sensor(*args, **kwargs)
         self._measurements = []
         self._running = True
 
