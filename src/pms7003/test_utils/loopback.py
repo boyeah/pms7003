@@ -8,6 +8,8 @@ import serial
 
 from pms7003 import Pms7003Sensor, PmsSensorException
 
+from .generator import random_values_generator
+
 
 def read(port: str, timeout: int = 2, max_failures: int = 3):
     with Pms7003Sensor(port=port, timeout=timeout) as sensor:
@@ -29,15 +31,12 @@ def write(port: str, frequency: float = 1.0):
         print(f"Opened serial port: {port} for writing frames of fake sensor data")
         sys.stdout.flush()
         frames_written = 0
+        rvs = random_values_generator()
         while True:
             frame = (
                 Pms7003Sensor.START_SEQUENCE
                 + int.to_bytes(Pms7003Sensor.FRAME_BYTES - 2, 2, "big")
-                + b"".join(
-                    itertools.chain(
-                        [random.randint(0, 1000).to_bytes(2, "big") for _ in range(12)]
-                    )
-                )
+                + b"".join(itertools.chain([rv.to_bytes(2, "big") for rv in next(rvs)]))
             )
             reserved = bytes([0, 0])
             checksum = sum(frame).to_bytes(2, "big")

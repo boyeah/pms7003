@@ -1,4 +1,4 @@
-from pms7003.loopback import read
+from pms7003.test_utils.loopback import read
 
 max_failures = 3
 

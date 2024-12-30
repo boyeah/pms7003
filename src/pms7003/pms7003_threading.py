@@ -9,9 +9,12 @@ class Pms7003Thread(Thread):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self._lock = Lock()
-        self._sensor = Pms7003Sensor(*args, **kwargs)
+        self._sensor = self._create_sensor(*args, **kwargs)
         self._measurements = []
         self._running = True
+
+    def _create_sensor(self, *args, **kwargs):
+        return Pms7003Sensor(*args, **kwargs)
 
     def __enter__(self):
         self.start()
