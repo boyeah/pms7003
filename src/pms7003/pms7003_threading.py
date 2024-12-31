@@ -1,8 +1,7 @@
 from threading import Lock, Thread
 
-from loguru import logger
-
 from .pms7003 import Pms7003Sensor
+from .utils import logger
 
 
 class Pms7003Thread(Thread):

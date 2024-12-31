@@ -5,7 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "Boye A. Høverstad", email = "boyeah@gmail.com" }]
 requires-python = ">=3.13"
-dependencies = ["loguru>=0.7.3", "pyserial>=3.5"]
+dependencies = [
+    "pyserial>=3.5",
+]
 
 [project.scripts]
 pms7003 = "pms7003:main"
@@ -19,4 +21,5 @@ build-backend = "hatchling.build"
 dev = [
     "ipykernel>=6.29.5",
     "ipython>=8.30.0",
+    "ruff>=0.8.4",
 ]
