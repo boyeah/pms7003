@@ -1,6 +1,8 @@
-from pms7003.test_utils.loopback import read
+import time
 
-max_failures = 3
+from pms7003 import Pms7003Sensor
 
-if __name__ == "__main__":
-    read("/dev/ttyAMA0", max_failures=max_failures)
+with Pms7003Sensor('/dev/ttyAMA0') as sensor:
+    while True:
+        print(sensor.read_measurement())
+        time.sleep(1)
