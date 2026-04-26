@@ -3,6 +3,7 @@ import itertools
 import random
 import sys
 import time
+from typing import NoReturn
 
 import serial
 
@@ -11,7 +12,7 @@ from pms7003 import Pms7003Sensor, PmsSensorException
 from .generator import random_values_generator
 
 
-def read(port: str, timeout: int = 2, max_failures: int = 3):
+def read(port: str, timeout: int = 2, max_failures: int = 3) -> None:
     with Pms7003Sensor(port=port, timeout=timeout) as sensor:
         failures = 0
         while failures < max_failures:
@@ -26,7 +27,7 @@ def read(port: str, timeout: int = 2, max_failures: int = 3):
                 return
 
 
-def write(port: str, frequency: float = 1.0):
+def write(port: str, frequency: float = 1.0) -> NoReturn:
     with serial.Serial(port=port, timeout=100, **Pms7003Sensor.SERIAL_CONFIG) as ser:
         print(f"Opened serial port: {port} for writing frames of fake sensor data")
         sys.stdout.flush()
@@ -47,7 +48,7 @@ def write(port: str, frequency: float = 1.0):
             time.sleep(frequency)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Serial port read/write utility. Run after creating a loopback with socat (socat -d -d pty,raw,echo=0 pty,raw,echo=0)."
     )

@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from types import TracebackType
 from typing import Self
 
 import serial
@@ -54,7 +55,7 @@ class Pms7003Sensor:
         "stopbits": serial.STOPBITS_ONE,
     }
 
-    def __init__(self, port, timeout=5):
+    def __init__(self, port: str, timeout: int = 5) -> None:
         self._serial = serial.Serial(
             port=port,
             timeout=timeout,
@@ -62,14 +63,19 @@ class Pms7003Sensor:
         )
         logger.info("Serial port opened on %s", port)
 
-    def close(self):
+    def close(self) -> None:
         self._serial.close()
         logger.info("Serial port closed")
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         self.close()
 
     def _read_frame(self) -> bytes:
@@ -111,16 +117,16 @@ class Pms7003Sensor:
         self._validate_frame(frame, checksum)
         return data
 
-    def _validate_frame(self, frame, checksum):
+    def _validate_frame(self, frame: bytes, checksum: int) -> None:
         if checksum != sum(frame[:-2]) + sum(self.START_SEQUENCE):
             raise PmsSensorException("Checksum error")
 
-    def wakeup(self):
+    def wakeup(self) -> None:
         with self._serial as s:
             command = bytearray([0x42, 0x4D, 0xE4, 0x00, 0x01, 0x01, 0x74])
             s.write(command)
 
-    def sleep(self):
+    def sleep(self) -> None:
         with self._serial as s:
             command = bytearray([0x42, 0x4D, 0xE4, 0x00, 0x00, 0x01, 0x73])
             s.write(command)

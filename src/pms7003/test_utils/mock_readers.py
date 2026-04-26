@@ -1,4 +1,5 @@
 import time
+from typing import Any
 from unittest.mock import patch
 
 from pms7003.pms7003 import Pms7003Sensor
@@ -7,7 +8,7 @@ from pms7003.test_utils.generator import random_values_generator
 
 
 class Pms7003MockSensor(Pms7003Sensor):
-    def __init__(self, port, timeout=5, frequency: float = 1.0):
+    def __init__(self, port: str, timeout: int = 5, frequency: float = 1.0) -> None:
         with patch("serial.Serial"):
             super().__init__(port, timeout)
         self._rvs = random_values_generator()
@@ -19,5 +20,5 @@ class Pms7003MockSensor(Pms7003Sensor):
 
 
 class Pms7003MockThread(Pms7003Thread):
-    def _create_sensor(self, *args, **kwargs):
+    def _create_sensor(self, *args: Any, **kwargs: Any) -> Pms7003MockSensor:
         return Pms7003MockSensor(*args, **kwargs)
