@@ -7,7 +7,7 @@ from .utils import logger
 
 
 class Pms7003Thread(Thread):
-    def __init__(self, max_failures: int = -1, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, max_failures: int = -1, **kwargs: Any) -> None:
         super().__init__()
         self._lock = Lock()
         self._sensor = self._create_sensor(*args, **kwargs)
